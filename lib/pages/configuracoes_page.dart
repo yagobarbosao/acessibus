@@ -83,6 +83,16 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
     }
   }
 
+  // Função auxiliar para determinar a cor do texto baseada no tema
+  Color _getTextColor({bool isSubtitle = false}) {
+    if (_altoContraste) {
+      return isSubtitle ? Colors.grey[300]! : Colors.white;
+    }
+    if (_darkTheme) {
+      return isSubtitle ? Colors.grey[300]! : Colors.white;
+    }
+    return isSubtitle ? Colors.grey[600]! : Colors.black87;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -186,25 +196,21 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                           Semantics(
                             label: 'Ativar ou desativar modo alto contraste',
                             child: SwitchListTile(
-                              title: Text(
-                                'Alto Contraste',
-                                style: TextStyle(
-                                  fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
-                                  color: _altoContraste
-                                      ? Colors.white
-                                      : Colors.black87,
-                                ),
-                              ),
-                              subtitle: Text(
-                                'Aumenta o contraste das cores',
-                                style: TextStyle(
-                                  fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 2)
-                                      .toDouble(),
-                                  color: _altoContraste
-                                      ? Colors.grey[300]
-                                      : Colors.grey[600],
-                                ),
-                              ),
+                              title:                                     Text(
+                                      'Alto Contraste',
+                                      style: TextStyle(
+                                        fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
+                                        color: _getTextColor(),
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      'Aumenta o contraste das cores',
+                                      style: TextStyle(
+                                        fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 2)
+                                            .toDouble(),
+                                        color: _getTextColor(isSubtitle: true),
+                                      ),
+                                    ),
                               value: _configController.altoContraste,
                               activeThumbColor: Colors.green,
                               onChanged: (valor) => _configController.setAltoContraste(valor),
@@ -215,25 +221,21 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                           Semantics(
                             label: 'Ativar ou desativar tema escuro',
                             child: SwitchListTile(
-                              title: Text(
-                                'Tema Escuro',
-                                style: TextStyle(
-                                  fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
-                                  color: _altoContraste
-                                      ? Colors.white
-                                      : Colors.black87,
-                                ),
-                              ),
-                              subtitle: Text(
-                                'Ativa o modo escuro do aplicativo',
-                                style: TextStyle(
-                                  fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 2)
-                                      .toDouble(),
-                                  color: _altoContraste
-                                      ? Colors.grey[300]
-                                      : Colors.grey[600],
-                                ),
-                              ),
+                              title:                                     Text(
+                                      'Tema Escuro',
+                                      style: TextStyle(
+                                        fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
+                                        color: _getTextColor(),
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      'Ativa o modo escuro do aplicativo',
+                                      style: TextStyle(
+                                        fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 2)
+                                            .toDouble(),
+                                        color: _getTextColor(isSubtitle: true),
+                                      ),
+                                    ),
                               value: _configController.darkTheme,
                               activeThumbColor: Colors.green,
                               onChanged: (valor) => _configController.setDarkTheme(valor),
@@ -244,25 +246,21 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                           Semantics(
                             label: 'Ativar ou desativar leitor de tela',
                             child: SwitchListTile(
-                              title: Text(
-                                'Leitor de Tela',
-                                style: TextStyle(
-                                  fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
-                                  color: _altoContraste
-                                      ? Colors.white
-                                      : Colors.black87,
-                                ),
-                              ),
-                              subtitle: Text(
-                                'Ativa suporte para leitores de tela',
-                                style: TextStyle(
-                                  fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 2)
-                                      .toDouble(),
-                                  color: _altoContraste
-                                      ? Colors.grey[300]
-                                      : Colors.grey[600],
-                                ),
-                              ),
+                              title:                                     Text(
+                                      'Leitor de Tela',
+                                      style: TextStyle(
+                                        fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
+                                        color: _getTextColor(),
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      'Ativa suporte para leitores de tela',
+                                      style: TextStyle(
+                                        fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 2)
+                                            .toDouble(),
+                                        color: _getTextColor(isSubtitle: true),
+                                      ),
+                                    ),
                               value: _configController.leitorTela,
                               activeThumbColor: Colors.green,
                               onChanged: (valor) => _configController.setLeitorTela(valor),
@@ -280,17 +278,15 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                                     horizontal: 16,
                                     vertical: 8,
                                   ),
-                                  child: Text(
-                                    'Tamanho da Fonte: ${_configController.tamanhoFonteEspecifico ?? 18}px',
-                                    style: TextStyle(
-                                      fontSize:
-                                          (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
-                                      fontWeight: FontWeight.bold,
-                                      color: _altoContraste
-                                          ? Colors.white
-                                          : Colors.black87,
+                                  child:                                     Text(
+                                      'Tamanho da Fonte: ${_configController.tamanhoFonteEspecifico ?? 18}px',
+                                      style: TextStyle(
+                                        fontSize:
+                                            (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
+                                        fontWeight: FontWeight.bold,
+                                        color: _getTextColor(),
+                                      ),
                                     ),
-                                  ),
                                 ),
                                 Slider(
                                   value: _configController.tamanhoFonte,
@@ -380,9 +376,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                               'Configure como deseja ser notificado quando o ônibus selecionado estiver se aproximando da parada. Você pode ativar um ou mais tipos de alerta conforme sua preferência ou necessidade.',
                               style: TextStyle(
                                 fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 2).toDouble(),
-                                color: _altoContraste
-                                    ? Colors.grey[300]
-                                    : Colors.grey[700],
+                                color: _getTextColor(isSubtitle: true),
                               ),
                               textAlign: TextAlign.justify,
                             ),
@@ -392,25 +386,21 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                           Semantics(
                             label: 'Ativar ou desativar alertas por vibração quando o ônibus se aproximar',
                             child: SwitchListTile(
-                              title: Text(
-                                'Vibração',
-                                style: TextStyle(
-                                  fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
-                                  color: _altoContraste
-                                      ? Colors.white
-                                      : Colors.black87,
-                                ),
-                              ),
-                              subtitle: Text(
-                                'Vibrar o dispositivo quando o ônibus estiver se aproximando',
-                                style: TextStyle(
-                                  fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 2)
-                                      .toDouble(),
-                                  color: _altoContraste
-                                      ? Colors.grey[300]
-                                      : Colors.grey[600],
-                                ),
-                              ),
+                              title:                                     Text(
+                                      'Vibração',
+                                      style: TextStyle(
+                                        fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
+                                        color: _getTextColor(),
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      'Vibrar o dispositivo quando o ônibus estiver se aproximando',
+                                      style: TextStyle(
+                                        fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 2)
+                                            .toDouble(),
+                                        color: _getTextColor(isSubtitle: true),
+                                      ),
+                                    ),
                               value: _configController.vibracao,
                               activeThumbColor: Colors.green,
                               onChanged: (valor) => _configController.setVibracao(valor),
@@ -421,25 +411,21 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                           Semantics(
                             label: 'Ativar ou desativar alertas sonoros quando o ônibus se aproximar',
                             child: SwitchListTile(
-                              title: Text(
-                                'Som',
-                                style: TextStyle(
-                                  fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
-                                  color: _altoContraste
-                                      ? Colors.white
-                                      : Colors.black87,
-                                ),
-                              ),
-                              subtitle: Text(
-                                'Emitir som quando o ônibus estiver se aproximando',
-                                style: TextStyle(
-                                  fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 2)
-                                      .toDouble(),
-                                  color: _altoContraste
-                                      ? Colors.grey[300]
-                                      : Colors.grey[600],
-                                ),
-                              ),
+                              title:                                     Text(
+                                      'Som',
+                                      style: TextStyle(
+                                        fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
+                                        color: _getTextColor(),
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      'Emitir som quando o ônibus estiver se aproximando',
+                                      style: TextStyle(
+                                        fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 2)
+                                            .toDouble(),
+                                        color: _getTextColor(isSubtitle: true),
+                                      ),
+                                    ),
                               value: _configController.som,
                               activeThumbColor: Colors.green,
                               onChanged: (valor) => _configController.setSom(valor),
@@ -450,25 +436,21 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                           Semantics(
                             label: 'Ativar ou desativar alertas luminosos quando o ônibus se aproximar',
                             child: SwitchListTile(
-                              title: Text(
-                                'Sinais Luminosos',
-                                style: TextStyle(
-                                  fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
-                                  color: _altoContraste
-                                      ? Colors.white
-                                      : Colors.black87,
-                                ),
-                              ),
-                              subtitle: Text(
-                                'Acender luzes no dispositivo quando o ônibus estiver se aproximando',
-                                style: TextStyle(
-                                  fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 2)
-                                      .toDouble(),
-                                  color: _altoContraste
-                                      ? Colors.grey[300]
-                                      : Colors.grey[600],
-                                ),
-                              ),
+                              title:                                     Text(
+                                      'Sinais Luminosos',
+                                      style: TextStyle(
+                                        fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
+                                        color: _getTextColor(),
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      'Acender luzes no dispositivo quando o ônibus estiver se aproximando',
+                                      style: TextStyle(
+                                        fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 2)
+                                            .toDouble(),
+                                        color: _getTextColor(isSubtitle: true),
+                                      ),
+                                    ),
                               value: _configController.luz,
                               activeThumbColor: Colors.green,
                               onChanged: (valor) => _configController.setLuz(valor),
@@ -482,21 +464,32 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                   // Seção de Conexão com Dispositivo
                   Semantics(
                     header: true,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: _altoContraste
-                            ? Colors.grey[900]
-                            : (_darkTheme ? theme.cardColor : Colors.white),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
+                    child: GestureDetector(
+                      onTap: () {
+                        // Quando o card é clicado, executa a ação de conectar/desconectar
+                        if (!_configController.conectando) {
+                          if (_configController.conectado) {
+                            _desconectarDispositivo();
+                          } else {
+                            _conectarDispositivo();
+                          }
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
                           color: _altoContraste
-                              ? Colors.white
-                              : Colors.orange,
-                          width: 2,
+                              ? Colors.grey[900]
+                              : (_darkTheme ? theme.cardColor : Colors.white),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _altoContraste
+                                ? Colors.white
+                                : Colors.orange,
+                            width: 2,
+                          ),
                         ),
-                      ),
-                      child: Column(
+                        child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
@@ -571,9 +564,9 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                                     style: TextStyle(
                                       fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
                                       fontWeight: FontWeight.bold,
-                                      color: _altoContraste
-                                          ? Colors.white
-                                          : (_configController.conectado ? Colors.green : Colors.black87),
+                                      color: _configController.conectado 
+                                          ? Colors.green 
+                                          : _getTextColor(),
                                     ),
                                   ),
                                 ],
@@ -606,9 +599,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                                         style: TextStyle(
                                           fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
                                           fontWeight: FontWeight.w500,
-                                          color: _altoContraste
-                                              ? Colors.white
-                                              : Colors.black87,
+                                          color: _getTextColor(),
                                         ),
                                         textAlign: TextAlign.center,
                                       ),
@@ -644,9 +635,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                                         _configController.dispositivoEncontrado!,
                                         style: TextStyle(
                                           fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 1).toDouble(),
-                                          color: _altoContraste
-                                              ? Colors.white
-                                              : Colors.black87,
+                                          color: _getTextColor(),
                                         ),
                                       ),
                                     ),
@@ -664,9 +653,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                                     'Conecte o dispositivo para receber alertas quando o ônibus se aproximar',
                                     style: TextStyle(
                                       fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
-                                      color: _altoContraste
-                                          ? Colors.white
-                                          : Colors.black87,
+                                      color: _getTextColor(),
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
@@ -708,18 +695,13 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                                           _configController.conectado ? Icons.link_off : Icons.link,
                                           size: (_configController.tamanhoFonteEspecifico ?? 18) * 1.4,
                                         ),
-                                  label: Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      vertical: (_configController.tamanhoFonteEspecifico ?? 18) * 1.0,
-                                    ),
-                                  child: Text(
+                                  label: Text(
                                     _configController.conectando
                                         ? _configController.mensagemConexao
                                         : (_configController.conectado ? 'Desconectar' : 'Conectar Dispositivo'),
-                                      style: TextStyle(
-                                        fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                    style: TextStyle(
+                                      fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   style: ElevatedButton.styleFrom(
@@ -741,6 +723,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                             ),
                           ),
                         ],
+                      ),
                       ),
                     ),
                   ),
@@ -775,23 +758,19 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                           style: TextStyle(
                             fontSize: (_configController.tamanhoFonteEspecifico ?? 18).toDouble(),
                             fontWeight: FontWeight.bold,
-                            color: _altoContraste
-                                ? Colors.white
-                                : Colors.black87,
+                            color: _getTextColor(),
                           ),
                         ),
                         subtitle: Text(
                           'Alterar dados pessoais',
                           style: TextStyle(
                             fontSize: ((_configController.tamanhoFonteEspecifico ?? 18) - 2).toDouble(),
-                            color: _altoContraste
-                                ? Colors.grey[300]
-                                : Colors.grey[600],
+                            color: _getTextColor(isSubtitle: true),
                           ),
                         ),
                         trailing: Icon(
                           Icons.arrow_forward_ios,
-                          color: _altoContraste
+                          color: _darkTheme || _altoContraste
                               ? Colors.white
                               : Colors.grey,
                         ),

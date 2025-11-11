@@ -45,22 +45,81 @@ class FirebaseRealtimeService {
           if (data == null) return;
 
           // Extrai dados
-          final distancia = data['distancia']?.toString();
+          final distancia = data['distancia'];
           final alerta = data['alerta']?.toString() ?? '';
           final onibus = data['onibus']?.toString() ?? '';
+          final latitude = data['latitude'];
+          final longitude = data['longitude'];
+          final fonte = data['fonte']?.toString() ?? '';
+          final timestamp = data['timestamp'];
 
-          // Converte distância para double
+          // Converte distância para double (pode vir como num ou string)
           double? distanciaNum;
           if (distancia != null) {
             try {
-              distanciaNum = double.parse(distancia);
+              if (distancia is num) {
+                distanciaNum = distancia.toDouble();
+              } else {
+                distanciaNum = double.parse(distancia.toString());
+              }
             } catch (e) {
               print('Erro ao converter distância: $e');
             }
           }
 
-          // Verifica se o ônibus está próximo (distância < 0.5m conforme código Arduino)
-          final onibusProximo = distanciaNum != null && distanciaNum < 0.5;
+          // Converte latitude e longitude para double
+          double? latNum;
+          double? lonNum;
+          if (latitude != null) {
+            try {
+              if (latitude is num) {
+                latNum = latitude.toDouble();
+              } else {
+                latNum = double.parse(latitude.toString());
+              }
+            } catch (e) {
+              print('Erro ao converter latitude: $e');
+            }
+          }
+          if (longitude != null) {
+            try {
+              if (longitude is num) {
+                lonNum = longitude.toDouble();
+              } else {
+                lonNum = double.parse(longitude.toString());
+              }
+            } catch (e) {
+              print('Erro ao converter longitude: $e');
+            }
+          }
+
+          print('Firebase Realtime: Dados recebidos - Distância: $distanciaNum, Alerta: $alerta, Ônibus: $onibus');
+          if (latNum != null && lonNum != null) {
+            print('Firebase Realtime: Coordenadas - Lat: $latNum, Lon: $lonNum');
+          }
+          if (fonte.isNotEmpty) {
+            print('Firebase Realtime: Fonte dos dados: $fonte');
+          }
+          if (timestamp != null) {
+            print('Firebase Realtime: Timestamp: $timestamp');
+          }
+
+          // MODO TESTE: Para testar notificações, sempre notifica quando recebe dados
+          // Altere para false em produção
+          const bool modoTeste = true;
+          
+          // Verifica se o alerta indica proximidade ou se a distância está dentro do limite
+          // Considera distâncias até 5 metros como "próximo" (ajustável)
+          final distanciaLimite = 5.0; // metros
+          final alertaIndicaProximo = alerta.toLowerCase().contains('proximo') || 
+                                      alerta.toLowerCase().contains('chegando') ||
+                                      alerta.toLowerCase().contains('próximo');
+          
+          // Em modo teste, sempre notifica quando recebe dados válidos
+          // Em produção, usa a lógica normal de distância
+          final onibusProximo = modoTeste 
+              ? (onibus.isNotEmpty) // Modo teste: sempre notifica se tem dados do ônibus
+              : ((distanciaNum != null && distanciaNum <= distanciaLimite) || alertaIndicaProximo);
 
           if (onibusProximo && onibus.isNotEmpty) {
             // Extrai número da linha do ID (ex: "onibus_132A" -> "132A")
@@ -71,12 +130,25 @@ class FirebaseRealtimeService {
 
             _linhaSelecionada = linha;
 
+            // Prepara mensagem de distância
+            String? distanciaTexto;
+            if (distanciaNum != null) {
+              distanciaTexto = '${distanciaNum.toStringAsFixed(2)}m';
+            }
+
+            print('Firebase Realtime: ✅ Ônibus $linha está próximo! Notificando usuário...');
+            
             // Notifica o usuário
             _notificacaoService.notificarOnibusChegando(
               linha,
-              distancia: distanciaNum != null ? '${distanciaNum.toStringAsFixed(2)}m' : null,
+              distancia: distanciaTexto,
             );
-          } else if (!onibusProximo) {
+          } else {
+            // Log quando ônibus não está próximo
+            if (distanciaNum != null) {
+              print('Firebase Realtime: ⏳ Ônibus ainda está longe (${distanciaNum.toStringAsFixed(2)}m > ${distanciaLimite}m)');
+            }
+            
             // Reset quando ônibus não está mais próximo
             if (_linhaSelecionada != null) {
               _linhaSelecionada = null;

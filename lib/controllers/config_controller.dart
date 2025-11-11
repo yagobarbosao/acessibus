@@ -98,43 +98,85 @@ class ConfigController extends ChangeNotifier {
   }
   
   /// Conecta dispositivo
+  /// 
+  /// Tenta conectar ao dispositivo da parada usando as configurações salvas.
+  /// Prioriza: Firebase Realtime Database > Firebase Firestore > MQTT > HTTP direto (ESP8266)
   Future<void> conectarDispositivo() async {
     _conectando = true;
-    _mensagemConexao = 'Procurando dispositivo...';
+    _mensagemConexao = 'Procurando dispositivo da parada...';
     notifyListeners();
     
-    await Future.delayed(const Duration(milliseconds: 300));
-    
     try {
-      // Busca no Firebase primeiro
-      _mensagemConexao = 'Procurando no Firebase...';
-      notifyListeners();
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Tenta conectar usando as configurações salvas
+      bool conectou = false;
+      String? dispositivoInfo;
       
-      // Busca na rede local
-      _mensagemConexao = 'Procurando na rede local...';
-      notifyListeners();
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Prioridade 1: Firebase Realtime Database (compatível com código Arduino)
+      if (_idOnibusRealtime.isNotEmpty) {
+        _mensagemConexao = 'Conectando via Firebase Realtime Database...';
+        notifyListeners();
+        
+        conectou = await _dispositivoService.iniciarMonitoramento(
+          idOnibusRealtime: _idOnibusRealtime,
+        );
+        
+        if (conectou) {
+          dispositivoInfo = 'Dispositivo conectado (Firebase Realtime)';
+        }
+      }
       
-      // Busca automática
-      _mensagemConexao = 'Buscando automaticamente...';
-      notifyListeners();
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Prioridade 2: Firebase Firestore
+      if (!conectou && _deviceId.isNotEmpty) {
+        _mensagemConexao = 'Conectando via Firebase Firestore...';
+        notifyListeners();
+        
+        conectou = await _dispositivoService.iniciarMonitoramento(
+          deviceIdFirebase: _deviceId,
+        );
+        
+        if (conectou) {
+          dispositivoInfo = 'Dispositivo conectado (Firebase Firestore)';
+        }
+      }
       
-      // Simula busca (substituir por lógica real)
-      final dispositivo = _dispositivoService.conectado 
-          ? 'Dispositivo encontrado' 
-          : null;
+      // Prioridade 3: MQTT (se configurado)
+      if (!conectou) {
+        _mensagemConexao = 'Tentando conectar via MQTT...';
+        notifyListeners();
+        
+        // Tenta conectar via MQTT (usa configurações padrão do MqttService)
+        conectou = await _dispositivoService.iniciarMonitoramento(
+          deviceIdMqtt: 'parada_dispositivo', // ID padrão, pode ser configurado depois
+        );
+        
+        if (conectou) {
+          dispositivoInfo = 'Dispositivo conectado (MQTT)';
+        }
+      }
       
-      if (dispositivo != null) {
-        _dispositivoEncontrado = dispositivo;
-        _conectado = true;
-        _mensagemConexao = 'Dispositivo conectado';
+      // Prioridade 4: HTTP direto (ESP8266 via WiFi)
+      if (!conectou && _ipESP8266.isNotEmpty) {
+        _mensagemConexao = 'Conectando via WiFi (ESP8266)...';
+        notifyListeners();
+        
+        conectou = await _dispositivoService.iniciarMonitoramento(
+          ipESP8266: _ipESP8266,
+        );
+        
+        if (conectou) {
+          dispositivoInfo = 'Dispositivo conectado (ESP8266: $_ipESP8266)';
+        }
+      }
+      
+      // Atualiza o estado baseado no resultado
+      _conectado = conectou && _dispositivoService.conectado;
+      
+      if (_conectado) {
+        _dispositivoEncontrado = dispositivoInfo;
+        _mensagemConexao = 'Dispositivo da parada conectado com sucesso!';
       } else {
         _dispositivoEncontrado = null;
-        _conectado = false;
-        _mensagemConexao = 'Nenhum dispositivo encontrado';
-        await Future.delayed(const Duration(milliseconds: 500));
+        _mensagemConexao = 'Nenhum dispositivo encontrado. Verifique as configurações.';
       }
       
       _conectando = false;
@@ -142,7 +184,7 @@ class ConfigController extends ChangeNotifier {
     } catch (e) {
       _conectado = false;
       _conectando = false;
-      _mensagemConexao = 'Erro ao procurar dispositivo';
+      _mensagemConexao = 'Erro ao conectar: ${e.toString()}';
       _dispositivoEncontrado = null;
       notifyListeners();
     }
