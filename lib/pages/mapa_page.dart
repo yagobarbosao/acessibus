@@ -31,6 +31,7 @@ class _MapaPageState extends State<MapaPage> {
   Set<Marker> _markers = {};
   bool _altoContraste = false;
   bool _isAnimating = false; // Flag para controlar animações simultâneas
+  String? _mapError; // Erro ao carregar o mapa
 
   // Coordenadas padrão (centro da cidade fictícia)
   static const CameraPosition _kInitialPosition = CameraPosition(
@@ -46,6 +47,20 @@ class _MapaPageState extends State<MapaPage> {
     _loadData();
     if (_isPlatformSupported()) {
       _getCurrentLocation();
+      // Verifica se o mapa carregou após 5 segundos
+      Future.delayed(const Duration(seconds: 5), () {
+        if (mounted && _mapController == null && _mapError == null) {
+          setState(() {
+            final platform = Platform.isIOS
+                ? 'iOS (Info.plist)'
+                : Platform.isAndroid
+                ? 'Android (local.properties)'
+                : 'plataforma';
+            _mapError =
+                'O mapa não carregou. Verifique se a Google Maps API Key está configurada corretamente para $platform';
+          });
+        }
+      });
     }
   }
 
@@ -88,9 +103,9 @@ class _MapaPageState extends State<MapaPage> {
         _isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao carregar dados: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao carregar dados: $e')));
       }
     }
   }
@@ -119,11 +134,9 @@ class _MapaPageState extends State<MapaPage> {
 
       // Anima a câmera de forma segura, evitando múltiplas animações simultâneas
       _safeAnimateCamera(
-        CameraUpdate.newLatLng(
-          LatLng(position.latitude, position.longitude),
-        ),
+        CameraUpdate.newLatLng(LatLng(position.latitude, position.longitude)),
       );
-      
+
       _updateMarkers();
     } catch (e) {
       if (mounted) {
@@ -146,9 +159,7 @@ class _MapaPageState extends State<MapaPage> {
             _currentPosition!.latitude,
             _currentPosition!.longitude,
           ),
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueBlue,
-          ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
           infoWindow: const InfoWindow(title: 'Sua Localização'),
         ),
       );
@@ -259,17 +270,13 @@ class _MapaPageState extends State<MapaPage> {
 
       // Ajustar câmera para mostrar toda a rota
       if (result.bounds != null) {
-        _safeAnimateCamera(
-          CameraUpdate.newLatLngBounds(result.bounds!, 100),
-        );
+        _safeAnimateCamera(CameraUpdate.newLatLngBounds(result.bounds!, 100));
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Rota da Linha ${linha.numero} exibida',
-            ),
+            content: Text('Rota da Linha ${linha.numero} exibida'),
             backgroundColor: Colors.green,
           ),
         );
@@ -299,21 +306,17 @@ class _MapaPageState extends State<MapaPage> {
       _pontoSelecionado = ponto;
     });
     _updateMarkers();
-    
+
     // Centraliza o mapa no ponto selecionado
     _safeAnimateCamera(
-      CameraUpdate.newLatLng(
-        LatLng(ponto.latitude, ponto.longitude),
-      ),
+      CameraUpdate.newLatLng(LatLng(ponto.latitude, ponto.longitude)),
     );
 
     // Mostra mensagem informativa
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Parada selecionada: ${ponto.nome}',
-          ),
+          content: Text('Parada selecionada: ${ponto.nome}'),
           backgroundColor: Colors.green,
           duration: const Duration(seconds: 2),
           action: SnackBarAction(
@@ -342,7 +345,7 @@ class _MapaPageState extends State<MapaPage> {
   /// que podem causar problemas com buffers de imagem no Android
   Future<void> _safeAnimateCamera(CameraUpdate update) async {
     if (_mapController == null || _isAnimating || !mounted) return;
-    
+
     try {
       _isAnimating = true;
       await _mapController!.animateCamera(update);
@@ -364,236 +367,297 @@ class _MapaPageState extends State<MapaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _altoContraste ? Colors.black : Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: _altoContraste
+          ? Colors.black
+          : Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).brightness == Brightness.dark 
-            ? Theme.of(context).colorScheme.surface 
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
             : Colors.green,
         title: Semantics(
           header: true,
           child: const Text(
             'Mapa de Linhas de Ônibus',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
         actions: [],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _isPlatformSupported()
-              ? Stack(
+          : _mapError != null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    GoogleMap(
-                      mapType: MapType.normal,
-                      initialCameraPosition: _kInitialPosition,
-                      markers: _markers,
-                      polylines: _polylines,
-                      myLocationEnabled: true,
-                      myLocationButtonEnabled: false,
-                      zoomControlsEnabled: true,
-                      zoomGesturesEnabled: true,
-                      scrollGesturesEnabled: true,
-                      tiltGesturesEnabled: true,
-                      rotateGesturesEnabled: true,
-                      onMapCreated: (GoogleMapController controller) {
-                        print('Mapa: GoogleMap criado com sucesso');
-                        _mapController = controller;
-                        _updateMarkers();
-                      },
-                      onCameraMoveStarted: () {
-                        debugPrint('Mapa: Câmera começou a se mover');
-                      },
-                      onCameraIdle: () {
-                        debugPrint('Mapa: Câmera parou');
-                      },
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red,
                     ),
-                    // Painel de seleção de linha
-                    Positioned(
-                      top: 10,
-                      left: 10,
-                      right: 10,
-                      child: Card(
-                        elevation: 4,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
+                    const SizedBox(height: 16),
+                    Text(
+                      'Erro ao carregar o mapa',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _mapError!,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _mapError = null;
+                          _isLoading = true;
+                        });
+                        _loadData();
+                      },
+                      child: const Text('Tentar novamente'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : _isPlatformSupported()
+          ? Stack(
+              children: [
+                GoogleMap(
+                  mapType: MapType.normal,
+                  initialCameraPosition: _kInitialPosition,
+                  markers: _markers,
+                  polylines: _polylines,
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: false,
+                  zoomControlsEnabled: true,
+                  zoomGesturesEnabled: true,
+                  scrollGesturesEnabled: true,
+                  tiltGesturesEnabled: true,
+                  rotateGesturesEnabled: true,
+                  onMapCreated: (GoogleMapController controller) {
+                    print('Mapa: GoogleMap criado com sucesso');
+                    _mapController = controller;
+                    _updateMarkers();
+                  },
+                  onCameraMoveStarted: () {
+                    debugPrint('Mapa: Câmera começou a se mover');
+                  },
+                  onCameraIdle: () {
+                    debugPrint('Mapa: Câmera parou');
+                  },
+                  onTap: (LatLng position) {
+                    debugPrint(
+                      'Mapa: Tocado em ${position.latitude}, ${position.longitude}',
+                    );
+                  },
+                ),
+                // Painel de seleção de linha
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  right: 10,
+                  child: Card(
+                    elevation: 4,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.directions_bus, color: Colors.green),
-                                  const SizedBox(width: 8),
-                                  const Expanded(
-                                    child: Text(
-                                      'Selecione uma linha:',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ),
-                                  if (_linhaSelecionada != null)
-                                    IconButton(
-                                      icon: const Icon(Icons.close, size: 20),
-                                      onPressed: _limparRota,
-                                      tooltip: 'Limpar rota',
-                                    ),
-                                ],
+                              const Icon(
+                                Icons.directions_bus,
+                                color: Colors.green,
                               ),
-                              const SizedBox(height: 8),
-                              SizedBox(
-                                height: 40,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: _linhas.length,
-                                  itemBuilder: (context, index) {
-                                    final linha = _linhas[index];
-                                    final isSelected = _linhaSelecionada?.numero == linha.numero;
-                                    return Padding(
-                                      padding: const EdgeInsets.only(right: 8.0),
-                                      child: ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: isSelected
-                                              ? Colors.blue
-                                              : Colors.green,
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 8,
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          _mostrarRotaLinha(linha);
-                                          // Mostra opção para ver mais detalhes
-                                          if (mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(
-                                                content: Text('Rota da Linha ${linha.numero} exibida'),
-                                                backgroundColor: Colors.green,
-                                                duration: const Duration(seconds: 2),
-                                                action: SnackBarAction(
-                                                  label: 'Ver Detalhes',
-                                                  textColor: Colors.white,
-                                                  onPressed: () {
-                                                    Navigator.pushNamed(
-                                                      context,
-                                                      '/informacoesOnibus',
-                                                      arguments: {'linha': linha},
-                                                    );
-                                                  },
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        },
-                                        child: Text(
-                                          'Linha ${linha.numero}',
-                                          style: const TextStyle(fontSize: 12),
-                                        ),
-                                      ),
-                                    );
-                                  },
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text(
+                                  'Selecione uma linha:',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
                                 ),
                               ),
-                              if (_linhaSelecionada != null) ...[
-                                const SizedBox(height: 8),
-                                GestureDetector(
-                                  onTap: () {
-                                    // Navega para informações do ônibus
-                                    Navigator.pushNamed(
-                                      context,
-                                      '/informacoesOnibus',
-                                      arguments: {'linha': _linhaSelecionada!},
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.shade50,
-                                      borderRadius: BorderRadius.circular(4),
-                                      border: Border.all(
-                                        color: Colors.blue,
-                                        width: 1,
+                              if (_linhaSelecionada != null)
+                                IconButton(
+                                  icon: const Icon(Icons.close, size: 20),
+                                  onPressed: _limparRota,
+                                  tooltip: 'Limpar rota',
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 40,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _linhas.length,
+                              itemBuilder: (context, index) {
+                                final linha = _linhas[index];
+                                final isSelected =
+                                    _linhaSelecionada?.numero == linha.numero;
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: isSelected
+                                          ? Colors.blue
+                                          : Colors.green,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
                                       ),
                                     ),
-                                    child: Row(
+                                    onPressed: () {
+                                      _mostrarRotaLinha(linha);
+                                      // Mostra opção para ver mais detalhes
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Rota da Linha ${linha.numero} exibida',
+                                            ),
+                                            backgroundColor: Colors.green,
+                                            duration: const Duration(
+                                              seconds: 2,
+                                            ),
+                                            action: SnackBarAction(
+                                              label: 'Ver Detalhes',
+                                              textColor: Colors.white,
+                                              onPressed: () {
+                                                Navigator.pushNamed(
+                                                  context,
+                                                  '/informacoesOnibus',
+                                                  arguments: {'linha': linha},
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: Text(
+                                      'Linha ${linha.numero}',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          if (_linhaSelecionada != null) ...[
+                            const SizedBox(height: 8),
+                            GestureDetector(
+                              onTap: () {
+                                // Navega para informações do ônibus
+                                Navigator.pushNamed(
+                                  context,
+                                  '/informacoesOnibus',
+                                  arguments: {'linha': _linhaSelecionada!},
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade50,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: Colors.blue,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.info_outline,
+                                      size: 16,
+                                      color: Colors.blue,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        '${_linhaSelecionada!.origem} → ${_linhaSelecionada!.destino}',
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 14,
+                                      color: Colors.blue,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (_pontoSelecionado != null) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: Colors.red, width: 1),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.place,
+                                    size: 16,
+                                    color: Colors.red,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        const Icon(Icons.info_outline,
-                                            size: 16, color: Colors.blue),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            '${_linhaSelecionada!.origem} → ${_linhaSelecionada!.destino}',
-                                            style: const TextStyle(fontSize: 12),
+                                        Text(
+                                          _pontoSelecionado!.nome,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        const Icon(Icons.arrow_forward_ios,
-                                            size: 14, color: Colors.blue),
+                                        if (_pontoSelecionado!.descricao !=
+                                            null)
+                                          Text(
+                                            _pontoSelecionado!.descricao!,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
                                       ],
                                     ),
                                   ),
-                                ),
-                              ],
-                              if (_pontoSelecionado != null) ...[
-                                const SizedBox(height: 8),
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                      color: Colors.red,
-                                      width: 1,
-                                    ),
+                                  IconButton(
+                                    icon: const Icon(Icons.close, size: 16),
+                                    color: Colors.red,
+                                    onPressed: _limparPontoSelecionado,
+                                    tooltip: 'Limpar parada selecionada',
                                   ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.place,
-                                          size: 16, color: Colors.red),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              _pontoSelecionado!.nome,
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            if (_pontoSelecionado!.descricao != null)
-                                              Text(
-                                                _pontoSelecionado!.descricao!,
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.close, size: 16),
-                                        color: Colors.red,
-                                        onPressed: _limparPontoSelecionado,
-                                        tooltip: 'Limpar parada selecionada',
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                  ],
-                )
-              : _buildUnsupportedPlatformView(),
+                  ),
+                ),
+              ],
+            )
+          : _buildUnsupportedPlatformView(),
       floatingActionButton: FloatingActionButton(
         onPressed: _getCurrentLocation,
         backgroundColor: Colors.green,
@@ -671,9 +735,7 @@ class _MapaPageState extends State<MapaPage> {
                 ),
                 title: Text(
                   'Linha ${linha.numero} - ${linha.nome}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: Text(
                   '${linha.origem} → ${linha.destino}',
@@ -709,9 +771,7 @@ class _MapaPageState extends State<MapaPage> {
                 leading: const Icon(Icons.location_on, color: Colors.green),
                 title: Text(
                   ponto.nome,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
                 subtitle: Text(
                   'Lat: ${ponto.latitude.toStringAsFixed(4)}, Lng: ${ponto.longitude.toStringAsFixed(4)}',

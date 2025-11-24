@@ -15,7 +15,7 @@ class DatabaseService {
   Future<Database?> get database async {
     // SQLite não funciona na web, retornar null
     if (kIsWeb) return null;
-    
+
     if (_database != null) return _database!;
     try {
       _database = await _initDatabase();
@@ -87,7 +87,7 @@ class DatabaseService {
   /// Atualiza o banco de dados quando a versão muda
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     print('Atualizando banco de dados da versão $oldVersion para $newVersion');
-    
+
     if (oldVersion < 2) {
       // Versão 2: Atualiza as linhas de teste
       // Limpa as linhas antigas e insere as novas
@@ -98,22 +98,22 @@ class DatabaseService {
   }
 
   Future<void> _insertDadosTeste(Database db) async {
-    // Inserir linhas de ônibus de teste
+    // Inserir linhas de ônibus (configuração real do ESP8266)
     final linhas = [
-      // Linhas de teste para integração com Arduino
+      // Linhas reais configuradas no ESP8266
       LinhaOnibus(
         numero: '132A',
-        nome: 'Centro - Terminal (Teste Visual)',
+        nome: 'Centro - Terminal',
         origem: 'Centro',
         destino: 'Terminal Rodoviário',
-        descricao: 'Linha de teste - Botão Visual do dispositivo físico',
+        descricao: 'Linha configurada no ESP8266 - Botão Visual (GPIO 14)',
       ),
       LinhaOnibus(
         numero: '251B',
-        nome: 'Universidade - Shopping (Teste Auditivo)',
+        nome: 'Universidade - Shopping',
         origem: 'Universidade',
         destino: 'Shopping Center',
-        descricao: 'Linha de teste - Botão Auditivo do dispositivo físico',
+        descricao: 'Linha configurada no ESP8266 - Botão Auditivo (GPIO 14)',
       ),
       // Outras linhas para demonstração
       LinhaOnibus(
@@ -143,7 +143,7 @@ class DatabaseService {
       await db.insert('linhas_onibus', linha.toMap());
     }
 
-    // Inserir pontos de parada de teste (coordenadas fictícias da cidade)
+    // Inserir pontos de parada (coordenadas de exemplo - devem ser atualizadas com dados reais)
     final pontos = [
       PontoParada(
         nome: 'Terminal Central',
@@ -200,7 +200,7 @@ class DatabaseService {
     if (kIsWeb) {
       return _getLinhasTeste();
     }
-    
+
     try {
       final db = await database;
       if (db == null) {
@@ -219,25 +219,25 @@ class DatabaseService {
     }
   }
 
-  /// Retorna dados de teste estáticos (fallback para web)
+  /// Retorna dados estáticos (fallback para web)
   List<LinhaOnibus> _getLinhasTeste() {
     return [
-      // Linhas de teste para integração com Arduino
+      // Linhas reais configuradas no ESP8266
       LinhaOnibus(
         id: 1,
         numero: '132A',
-        nome: 'Centro - Terminal (Teste Visual)',
+        nome: 'Centro - Terminal',
         origem: 'Centro',
         destino: 'Terminal Rodoviário',
-        descricao: 'Linha de teste - Botão Visual do dispositivo físico',
+        descricao: 'Linha configurada no ESP8266 - Botão Visual (GPIO 14)',
       ),
       LinhaOnibus(
         id: 2,
         numero: '251B',
-        nome: 'Universidade - Shopping (Teste Auditivo)',
+        nome: 'Universidade - Shopping',
         origem: 'Universidade',
         destino: 'Shopping Center',
-        descricao: 'Linha de teste - Botão Auditivo do dispositivo físico',
+        descricao: 'Linha configurada no ESP8266 - Botão Auditivo (GPIO 14)',
       ),
       // Outras linhas para demonstração
       LinhaOnibus(
@@ -277,7 +277,7 @@ class DatabaseService {
         return null;
       }
     }
-    
+
     try {
       final db = await database;
       if (db == null) {
@@ -326,7 +326,7 @@ class DatabaseService {
             linha.destino.toLowerCase().contains(queryLower);
       }).toList();
     }
-    
+
     try {
       final db = await database;
       if (db == null) {
@@ -341,7 +341,8 @@ class DatabaseService {
       }
       final List<Map<String, dynamic>> maps = await db.query(
         'linhas_onibus',
-        where: 'numero LIKE ? OR nome LIKE ? OR origem LIKE ? OR destino LIKE ?',
+        where:
+            'numero LIKE ? OR nome LIKE ? OR origem LIKE ? OR destino LIKE ?',
         whereArgs: ['%$query%', '%$query%', '%$query%', '%$query%'],
       );
       if (maps.isEmpty) {
@@ -375,7 +376,7 @@ class DatabaseService {
     if (kIsWeb) {
       return _getPontosTeste();
     }
-    
+
     try {
       final db = await database;
       if (db == null) {
@@ -458,7 +459,7 @@ class DatabaseService {
         return null;
       }
     }
-    
+
     try {
       final db = await database;
       if (db == null) {
@@ -504,7 +505,7 @@ class DatabaseService {
             (ponto.descricao?.toLowerCase().contains(queryLower) ?? false);
       }).toList();
     }
-    
+
     try {
       final db = await database;
       if (db == null) {
@@ -540,4 +541,3 @@ class DatabaseService {
     }
   }
 }
-
