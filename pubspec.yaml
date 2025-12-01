@@ -131,7 +131,4 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/logo.png"
-  adaptive_icon_background: "#4CAF50"  # Verde do app
-  adaptive_icon_foreground: "assets/logo.png"
-  remove_alpha_ios: true
+  image_path: "assets/icon/icon.png"
